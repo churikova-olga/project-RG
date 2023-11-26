@@ -2,7 +2,7 @@
 
 # Uputstvo
 1. `git clone https://github.com/churikova-olga/project_RG.git`
-2. CLion -> Open -> path/to/my/project_base
+2. CLion -> Open -> path/to/my/project_RG
 3. Main se nalazi u src/main.cpp
 4. Cpp fajlovi idu u src folder
 5. Zaglavlja (h i hpp) fajlovi idu u include
