@@ -27,6 +27,8 @@ void processInput(GLFWwindow *window);
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
 unsigned int loadCubemap(vector<std::string> faces);
+unsigned int loadTexture(const char *path);
+
 // settings
 const unsigned int SCR_WIDTH = 1600;
 const unsigned int SCR_HEIGHT = 900;
@@ -57,7 +59,7 @@ struct ProgramState {
     bool ImGuiEnabled = false;
     Camera camera;
     bool CameraMouseMovementUpdateEnabled = true;
-    glm::vec3 backpackPosition = glm::vec3(0.0f);
+//    glm::vec3 backpackPosition = glm::vec3(0.0f);
     float backpackScale = 1.0f;
     PointLight pointLight;
     ProgramState()
@@ -164,7 +166,7 @@ int main() {
     // -------------------------
     Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");
     Shader skyboxShader("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
-
+    Shader shaderTerrain("resources/shaders/terrain.vs", "resources/shaders/terrain.fs");
 
     //positions skybox
     //--------
@@ -213,20 +215,35 @@ int main() {
 
     };
 
+    //positions terrain
+    //--------
+    float terrainVertices[] = {
+            // coordinate       // texture
+            60.0f, -0.5f,  60.0f,  20.0f, 0.0f,
+            -60.0f, -0.5f,  60.0f,  0.0f, 0.0f,
+            -60.0f, -0.5f, -60.0f,  0.0f, 20.0f,
+
+            60.0f, -0.5f,  60.0f,  20.0f, 0.0f,
+            -60.0f, -0.5f, -60.0f,  0.0f, 20.0f,
+            60.0f, -0.5f, -60.0f,  20.0f, 20.0f
+    };
+
+
+
     // load models
     // -----------
-    Model ourModel("resources/objects/backpack/backpack.obj");
-    ourModel.SetShaderTextureNamePrefix("material.");
+//    Model ourModel("resources/objects/backpack/backpack.obj");
+//    ourModel.SetShaderTextureNamePrefix("material.");
 
-    PointLight& pointLight = programState->pointLight;
-    pointLight.position = glm::vec3(4.0f, 4.0, 0.0);
-    pointLight.ambient = glm::vec3(0.1, 0.1, 0.1);
-    pointLight.diffuse = glm::vec3(0.6, 0.6, 0.6);
-    pointLight.specular = glm::vec3(1.0, 1.0, 1.0);
-
-    pointLight.constant = 1.0f;
-    pointLight.linear = 0.09f;
-    pointLight.quadratic = 0.032f;
+//    PointLight& pointLight = programState->pointLight;
+//    pointLight.position = glm::vec3(4.0f, 4.0, -4.0);
+//    pointLight.ambient = glm::vec3(0.1, 0.1, 0.1);
+//    pointLight.diffuse = glm::vec3(0.6, 0.6, 0.6);
+//    pointLight.specular = glm::vec3(1.0, 1.0, 1.0);
+//
+//    pointLight.constant = 1.0f;
+//    pointLight.linear = 0.09f;
+//    pointLight.quadratic = 0.032f;
 
 
     //VAO skybox
@@ -240,6 +257,23 @@ int main() {
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
 
+
+
+    // VAO terrain
+    unsigned int terrainVAO, terrainVBO;
+    glGenVertexArrays(1, &terrainVAO);
+    glGenBuffers(1, &terrainVBO);
+    glBindVertexArray(terrainVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, terrainVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(terrainVertices), &terrainVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glBindVertexArray(0);
+
+
+
     vector<std::string> faces{
         FileSystem::getPath("resources/textures/skybox/left.jpeg"),
         FileSystem::getPath("resources/textures/skybox/right.jpeg"),
@@ -250,6 +284,7 @@ int main() {
 
     };
     unsigned int cubemapTexture = loadCubemap(faces);
+    unsigned int floorTexture = loadTexture("resources/textures/terrain/terrain.jpeg");
 
 
     // draw in wireframe
@@ -257,6 +292,9 @@ int main() {
 
     skyboxShader.use();
     skyboxShader.setInt("skybox", 0);
+
+    shaderTerrain.use();
+    shaderTerrain.setInt("terrain", 0);
 
     // render loop
     // -----------
@@ -278,33 +316,45 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // don't forget to enable shader before setting uniforms
-        ourShader.use();
-        pointLight.position = glm::vec3(4.0 * cos(currentFrame), 4.0f, 4.0 * sin(currentFrame));
-        ourShader.setVec3("pointLight.position", pointLight.position);
-        ourShader.setVec3("pointLight.ambient", pointLight.ambient);
-        ourShader.setVec3("pointLight.diffuse", pointLight.diffuse);
-        ourShader.setVec3("pointLight.specular", pointLight.specular);
-        ourShader.setFloat("pointLight.constant", pointLight.constant);
-        ourShader.setFloat("pointLight.linear", pointLight.linear);
-        ourShader.setFloat("pointLight.quadratic", pointLight.quadratic);
-        ourShader.setVec3("viewPosition", programState->camera.Position);
-        ourShader.setFloat("material.shininess", 32.0f);
+//        ourShader.use();
+//
+//        ourShader.setVec3("pointLight.position", pointLight.position);
+//        ourShader.setVec3("pointLight.ambient", pointLight.ambient);
+//        ourShader.setVec3("pointLight.diffuse", pointLight.diffuse);
+//        ourShader.setVec3("pointLight.specular", pointLight.specular);
+//        ourShader.setFloat("pointLight.constant", pointLight.constant);
+//        ourShader.setFloat("pointLight.linear", pointLight.linear);
+//        ourShader.setFloat("pointLight.quadratic", pointLight.quadratic);
+//        ourShader.setVec3("viewPosition", programState->camera.Position);
+//        ourShader.setFloat("material.shininess", 32.0f);
 
         // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom),
                                                 (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = programState->camera.GetViewMatrix();
+        glm::mat4 model = glm::mat4(1.0f);
         ourShader.setMat4("projection", projection);
         ourShader.setMat4("view", view);
 
-        // render the loaded model
-        glm::mat4 model = glm::mat4(1.0f);
-        model = glm::translate(model,
-                               programState->backpackPosition); // translate it down so it's at the center of the scene
-        model = glm::scale(model, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
-        ourShader.setMat4("model", model);
-        ourModel.Draw(ourShader);
+//
+//        // render the loaded model
+//        glm::mat4 model = glm::mat4(1.0f);
+//        model = glm::translate(model,
+//                               programState->backpackPosition); // translate it down so it's at the center of the scene
+//        model = glm::scale(model, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
+//        ourShader.setMat4("model", model);
+//        ourModel.Draw(ourShader);
 
+
+        //render terrain
+        shaderTerrain.use();
+        shaderTerrain.setMat4("view", view);
+        shaderTerrain.setMat4("projection", projection);
+        shaderTerrain.setMat4("model", glm::mat4(1.0f));
+        glBindVertexArray(terrainVAO);
+        glBindTexture(GL_TEXTURE_2D, floorTexture);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+        glBindVertexArray(0);
 
         //render skybox
         glDepthFunc(GL_LEQUAL);
@@ -469,7 +519,7 @@ void DrawImGui(ProgramState *programState) {
         ImGui::Text("Hello text");
         ImGui::SliderFloat("Float slider", &f, 0.0, 1.0);
 //        ImGui::ColorEdit3("Background color", (float *) &programState->clearColor);
-        ImGui::DragFloat3("Backpack position", (float*)&programState->backpackPosition);
+//        ImGui::DragFloat3("Backpack position", (float*)&programState->backpackPosition);
         ImGui::DragFloat("Backpack scale", &programState->backpackScale, 0.05, 0.1, 4.0);
 
         ImGui::DragFloat("pointLight.constant", &programState->pointLight.constant, 0.05, 0.0, 1.0);
