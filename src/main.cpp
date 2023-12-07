@@ -26,6 +26,8 @@ void processInput(GLFWwindow *window);
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
+
+
 unsigned int loadCubemap(vector<std::string> faces);
 unsigned int loadTexture(const char *path);
 
@@ -53,6 +55,13 @@ struct PointLight {
     float linear;
     float quadratic;
 };
+struct DirLight {
+    glm::vec3 direction;
+    glm::vec3 ambient;
+    glm::vec3 diffuse;
+    glm::vec3 specular;
+};
+
 
 struct ProgramState {
     glm::vec3 clearColor = glm::vec3(0);
@@ -62,6 +71,7 @@ struct ProgramState {
 //    glm::vec3 backpackPosition = glm::vec3(0.0f);
     float backpackScale = 1.0f;
     PointLight pointLight;
+    DirLight dirLight;
     ProgramState()
             : camera(glm::vec3(0.0f, 0.0f, 3.0f)) {}
 
@@ -139,6 +149,7 @@ int main() {
         return -1;
     }
 
+
     // tell stb_image.h to flip loaded texture's on the y-axis (before loading model).
     stbi_set_flip_vertically_on_load(true);
 
@@ -161,12 +172,18 @@ int main() {
     // configure global opengl state
     // -----------------------------
     glEnable(GL_DEPTH_TEST);
+    // enabling back face culling
+    // -----------------------------
+    glEnable(GL_CULL_FACE);
+
 
     // build and compile shaders
     // -------------------------
-    Shader ourShader("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");
+    Shader LightShader("resources/shaders/2.model_lighting.vs", "resources/shaders/2.model_lighting.fs");
     Shader skyboxShader("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
-    Shader shaderTerrain("resources/shaders/terrain.vs", "resources/shaders/terrain.fs");
+    Shader terrainShader("resources/shaders/terrain.vs", "resources/shaders/terrain.fs");
+    Shader grassShader("resources/shaders/grass.vs", "resources/shaders/grass.fs");
+
 
     //positions skybox
     //--------
@@ -229,22 +246,57 @@ int main() {
     };
 
 
+    float transparentVertices[] = {
+            // coordinate       // texture
+            0.0f, 0.5f, 0.0f, 0.0f, 0.0f,
+            0.0f, -0.5f, 0.0f, 0.0f, 1.0f,
+            1.0f, -0.5f, 0.0f, 1.0f, 1.0f,
+
+            0.0f, 0.5f, 0.0f, 0.0f, 0.0f,
+            1.0f, -0.5f, 0.0f, 1.0f, 1.0f,
+            1.0f, 0.5f, 0.0f, 1.0f, 0.0f,
+    };
 
     // load models
     // -----------
 //    Model ourModel("resources/objects/backpack/backpack.obj");
 //    ourModel.SetShaderTextureNamePrefix("material.");
 
-//    PointLight& pointLight = programState->pointLight;
-//    pointLight.position = glm::vec3(4.0f, 4.0, -4.0);
-//    pointLight.ambient = glm::vec3(0.1, 0.1, 0.1);
-//    pointLight.diffuse = glm::vec3(0.6, 0.6, 0.6);
-//    pointLight.specular = glm::vec3(1.0, 1.0, 1.0);
-//
-//    pointLight.constant = 1.0f;
-//    pointLight.linear = 0.09f;
-//    pointLight.quadratic = 0.032f;
+    //Dir light
+    DirLight& dirLight = programState->dirLight;
+    dirLight.direction = glm::vec3(-0.2f, -1.0f, -0.3f);
+    dirLight.ambient =   glm::vec3(0.05f, 0.05f, 0.01f);
+    dirLight.diffuse =   glm::vec3( 0.2f, 0.2f, 0.7f);
+    dirLight.specular =  glm::vec3(0.7f, 0.7f, 0.7f);
 
+    //Point light
+    PointLight& pointLight = programState->pointLight;
+    pointLight.position = glm::vec3(4.0f, 4.0, 0.0);
+    pointLight.ambient = glm::vec3(0.1, 0.1, 0.1);
+    pointLight.diffuse = glm::vec3(0.6, 0.6, 0.6);
+    pointLight.specular = glm::vec3(1.0, 1.0, 1.0);
+
+    pointLight.constant = 1.0f;
+    pointLight.linear = 0.09f;
+    pointLight.quadratic = 0.032f;
+
+    int amount = 30;
+    glm::vec3 vegetations[amount];
+    srand(glfwGetTime());
+    glm::vec3 vegetation;
+//    float offset = 0.5f;
+    vegetation.y = 0.0f;
+    for(int i = 0; i < amount; i++){
+        vegetation.x = float(rand() % 80) - 40;
+        vegetation.z = float(rand() % 80) - 40;
+        vegetations[i] = vegetation;
+    }
+
+    unsigned int instanceVBO;
+    glGenBuffers(1, &instanceVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3)*amount, &vegetations[0], GL_STATIC_DRAW);
+    glBindBuffer(GL_ARRAY_BUFFER ,0);
 
     //VAO skybox
     //---------
@@ -256,7 +308,6 @@ int main() {
     glBufferData(GL_ARRAY_BUFFER, sizeof(skyboxVertices), &skyboxVertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0);
-
 
 
     // VAO terrain
@@ -272,7 +323,24 @@ int main() {
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
     glBindVertexArray(0);
 
+    // VAO transparent
+    unsigned int transparentVAO, transparentVBO;
+    glGenVertexArrays(1, &transparentVAO);
+    glGenBuffers(1, &transparentVBO);
+    glBindVertexArray(transparentVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, transparentVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(transparentVertices), &transparentVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+    glVertexAttribPointer(2,3, GL_FLOAT,GL_FALSE, 3*sizeof (float), (void*)0);
+    glBindBuffer(GL_ARRAY_BUFFER,0);
+    glVertexAttribDivisor(2, 1);
 
+//    glBindVertexArray(0);
 
     vector<std::string> faces{
         FileSystem::getPath("resources/textures/skybox/left.jpeg"),
@@ -283,18 +351,37 @@ int main() {
         FileSystem::getPath("resources/textures/skybox/front.jpeg"),
 
     };
+
     unsigned int cubemapTexture = loadCubemap(faces);
+
+    //load texture
     unsigned int floorTexture = loadTexture("resources/textures/terrain/terrain.jpeg");
 
+    stbi_set_flip_vertically_on_load(false);
+    unsigned int transparentTexture = loadTexture("resources/textures/grassDry.png");
 
     // draw in wireframe
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
+//    vector<glm::vec3> vegetation{
+//        glm::vec3(-1.5f, 0.0f, -0.48f),
+//        glm::vec3(1.5f, 0.0f, 0.51f),
+//        glm::vec3(0.0f, 0.0f, 0.7f),
+//    };
+
+
+
+
     skyboxShader.use();
     skyboxShader.setInt("skybox", 0);
 
-    shaderTerrain.use();
-    shaderTerrain.setInt("terrain", 0);
+    terrainShader.use();
+    terrainShader.setInt("terrain", 0);
+
+    //shaderTransparent
+    grassShader.use();
+    grassShader.setInt("grass", 0);
+
 
     // render loop
     // -----------
@@ -312,49 +399,66 @@ int main() {
 
         // render
         // ------
-        glClearColor(programState->clearColor.r, programState->clearColor.g, programState->clearColor.b, 1.0f);
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        // don't forget to enable shader before setting uniforms
-//        ourShader.use();
-//
-//        ourShader.setVec3("pointLight.position", pointLight.position);
-//        ourShader.setVec3("pointLight.ambient", pointLight.ambient);
-//        ourShader.setVec3("pointLight.diffuse", pointLight.diffuse);
-//        ourShader.setVec3("pointLight.specular", pointLight.specular);
-//        ourShader.setFloat("pointLight.constant", pointLight.constant);
-//        ourShader.setFloat("pointLight.linear", pointLight.linear);
-//        ourShader.setFloat("pointLight.quadratic", pointLight.quadratic);
-//        ourShader.setVec3("viewPosition", programState->camera.Position);
-//        ourShader.setFloat("material.shininess", 32.0f);
+
+        LightShader.use();
+        // Directional light
+        LightShader.setVec3("dirLight.direction", dirLight.direction);
+        LightShader.setVec3("dirLight.ambient", dirLight.ambient);
+        LightShader.setVec3("dirLight.diffuse", dirLight.diffuse);
+        LightShader.setVec3("dirLight.specular", dirLight.specular);
+        // Point light
+        LightShader.setVec3("pointLight.position", pointLight.position);
+        LightShader.setVec3("pointLight.ambient", pointLight.ambient);
+        LightShader.setVec3("pointLight.diffuse", pointLight.diffuse);
+        LightShader.setVec3("pointLight.specular", pointLight.specular);
+        LightShader.setFloat("pointLight.constant", pointLight.constant);
+        LightShader.setFloat("pointLight.linear", pointLight.linear);
+        LightShader.setFloat("pointLight.quadratic", pointLight.quadratic);
+
+
 
         // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom),
                                                 (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
         glm::mat4 view = programState->camera.GetViewMatrix();
         glm::mat4 model = glm::mat4(1.0f);
-        ourShader.setMat4("projection", projection);
-        ourShader.setMat4("view", view);
 
-//
-//        // render the loaded model
-//        glm::mat4 model = glm::mat4(1.0f);
-//        model = glm::translate(model,
-//                               programState->backpackPosition); // translate it down so it's at the center of the scene
-//        model = glm::scale(model, glm::vec3(programState->backpackScale));    // it's a bit too big for our scene, so scale it down
-//        ourShader.setMat4("model", model);
-//        ourModel.Draw(ourShader);
+        LightShader.setMat4("projection", projection);
+        LightShader.setMat4("view", view);
 
+
+        // render the loaded model
 
         //render terrain
-        shaderTerrain.use();
-        shaderTerrain.setMat4("view", view);
-        shaderTerrain.setMat4("projection", projection);
-        shaderTerrain.setMat4("model", glm::mat4(1.0f));
-        glBindVertexArray(terrainVAO);
+        terrainShader.use();
+        terrainShader.setMat4("view", view);
+        terrainShader.setMat4("projection", projection);
+        terrainShader.setMat4("model", glm::mat4(1.0f));
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, floorTexture);
+        glBindVertexArray(terrainVAO);
+
         glDrawArrays(GL_TRIANGLES, 0, 6);
+
         glBindVertexArray(0);
+
+        glDisable(GL_CULL_FACE);
+
+
+        //render transparent
+        grassShader.use();
+        grassShader.setMat4("view", view);
+        grassShader.setMat4("projection", projection);
+        //grassShader.setMat4("model", glm::mat4(1.0f));
+        glBindVertexArray(transparentVAO);
+
+        glBindTexture(GL_TEXTURE_2D, transparentTexture);
+        glDrawArraysInstanced(GL_TRIANGLES, 0, 6, amount);
+        glBindVertexArray(0);
+
 
         //render skybox
         glDepthFunc(GL_LEQUAL);
@@ -390,6 +494,10 @@ int main() {
     // ------------------------------------------------------------------
     glDeleteVertexArrays(1, &skyboxVAO);
     glDeleteBuffers(1, &skyboxVBO);
+    glDeleteVertexArrays(1, &terrainVAO);
+    glDeleteBuffers(1, &terrainVBO);
+    glDeleteVertexArrays(1, &transparentVAO);
+    glDeleteBuffers(1, &transparentVBO);
     glfwTerminate();
     return 0;
 }
