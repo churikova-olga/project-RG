@@ -69,6 +69,19 @@ struct ProgramState {
     Camera camera;
     bool CameraMouseMovementUpdateEnabled = true;
 //    glm::vec3 backpackPosition = glm::vec3(0.0f);
+
+    glm::vec3 housePosition = glm::vec3(15.0f, -1.0f, -20.0f);
+    float houseRotation = -90.0f;
+    float houseScale = 80.0f;
+
+    glm::vec3 fencePosition = glm::vec3(-9.0f, -0.5f, -5.0f);
+    float fenceRotation = 90.0f;
+    float fenceScale = 0.07f;
+
+    glm::vec3 scarecrowPosition = glm::vec3(0.0f, -0.5f, -2.0f);
+    float scarecrowRotation = 180.0f;
+    float scarecrowScale = 40.0f;
+
     float backpackScale = 1.0f;
     PointLight pointLight;
     DirLight dirLight;
@@ -185,6 +198,15 @@ int main() {
     Shader grassShader("resources/shaders/grass.vs", "resources/shaders/grass.fs");
 
 
+    //load model
+    Model houseModel("resources/objects/house/house.obj");
+    houseModel.SetShaderTextureNamePrefix("material.");
+
+    Model fenceModel("resources/objects/fence/fence.obj");
+    fenceModel.SetShaderTextureNamePrefix("material.");
+
+    Model scarecrowModel("resources/objects/scarecrow/scarecrow.obj");
+    fenceModel.SetShaderTextureNamePrefix("material.");
     //positions skybox
     //--------
     float skyboxVertices[] = {
@@ -248,23 +270,24 @@ int main() {
 
     float transparentVertices[] = {
             // coordinate       // texture
-            0.0f, 0.5f, 0.0f, 0.0f, 0.0f,
+            0.0f, 2.0f, 0.0f, 0.0f, 0.0f,
             0.0f, -0.5f, 0.0f, 0.0f, 1.0f,
             1.0f, -0.5f, 0.0f, 1.0f, 1.0f,
 
-            0.0f, 0.5f, 0.0f, 0.0f, 0.0f,
+            0.0f, 2.0f, 0.0f, 0.0f, 0.0f,
             1.0f, -0.5f, 0.0f, 1.0f, 1.0f,
-            1.0f, 0.5f, 0.0f, 1.0f, 0.0f,
+            1.0f, 2.0f, 0.0f, 1.0f, 0.0f,
     };
 
     // load models
     // -----------
 //    Model ourModel("resources/objects/backpack/backpack.obj");
 //    ourModel.SetShaderTextureNamePrefix("material.");
-
+    LightShader.use();
+    LightShader.setInt("material.diffuse", 0);
     //Dir light
     DirLight& dirLight = programState->dirLight;
-    dirLight.direction = glm::vec3(-0.2f, -1.0f, -0.3f);
+    dirLight.direction = glm::vec3(0.2f, 120.0f, 25.0f);
     dirLight.ambient =   glm::vec3(0.05f, 0.05f, 0.01f);
     dirLight.diffuse =   glm::vec3( 0.2f, 0.2f, 0.7f);
     dirLight.specular =  glm::vec3(0.7f, 0.7f, 0.7f);
@@ -280,17 +303,20 @@ int main() {
     pointLight.linear = 0.09f;
     pointLight.quadratic = 0.032f;
 
-    int amount = 30;
+
+    //blending grass
+    int amount = 100;
     glm::vec3 vegetations[amount];
     srand(glfwGetTime());
     glm::vec3 vegetation;
 //    float offset = 0.5f;
     vegetation.y = 0.0f;
     for(int i = 0; i < amount; i++){
-        vegetation.x = float(rand() % 80) - 40;
-        vegetation.z = float(rand() % 80) - 40;
+        vegetation.x = float(rand() % 16) - 8;
+        vegetation.z = float(rand() % 16) - 8;
         vegetations[i] = vegetation;
     }
+    //
 
     unsigned int instanceVBO;
     glGenBuffers(1, &instanceVBO);
@@ -403,13 +429,17 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
+
         LightShader.use();
+
+
         // Directional light
         LightShader.setVec3("dirLight.direction", dirLight.direction);
         LightShader.setVec3("dirLight.ambient", dirLight.ambient);
         LightShader.setVec3("dirLight.diffuse", dirLight.diffuse);
         LightShader.setVec3("dirLight.specular", dirLight.specular);
         // Point light
+
         LightShader.setVec3("pointLight.position", pointLight.position);
         LightShader.setVec3("pointLight.ambient", pointLight.ambient);
         LightShader.setVec3("pointLight.diffuse", pointLight.diffuse);
@@ -418,6 +448,7 @@ int main() {
         LightShader.setFloat("pointLight.linear", pointLight.linear);
         LightShader.setFloat("pointLight.quadratic", pointLight.quadratic);
 
+        LightShader.setFloat("material.shininess", 32.0f);
 
 
         // view/projection transformations
@@ -431,9 +462,44 @@ int main() {
 
 
         // render the loaded model
+        //house
+        model = glm::translate(model,
+                               programState->housePosition);
+        model = glm::rotate(model, glm::radians(programState->houseRotation), glm::vec3(0,1,0));
+        model = glm::scale(model, glm::vec3(programState->houseScale));
+
+        LightShader.setMat4("model", model);
+        houseModel.Draw(LightShader);
+
+        //fence
+        model = glm::mat4(1.0f);
+        model = glm::translate(model,
+                               programState->fencePosition);
+        model = glm::rotate(model, glm::radians(programState->fenceRotation), glm::vec3(0,1,0));
+        model = glm::scale(model, glm::vec3(programState->fenceScale));
+
+        LightShader.setMat4("model", model);
+        fenceModel.Draw(LightShader);
+
+
+        //scarecrow
+        model = glm::mat4(1.0f);
+        model = glm::translate(model,
+                               programState->scarecrowPosition);
+        model = glm::rotate(model, glm::radians(programState->scarecrowRotation), glm::vec3(0,1,0));
+        model = glm::scale(model, glm::vec3(programState->scarecrowScale));
+
+        LightShader.setMat4("model", model);
+        scarecrowModel.Draw(LightShader);
 
         //render terrain
         terrainShader.use();
+
+        terrainShader.setVec3("dirLight.direction", glm::vec3(-0.2f, 1.0f, -0.1f));
+        terrainShader.setVec3("dirLight.ambient", glm::vec3(0.0f, 0.0f, 0.0f));
+        terrainShader.setVec3("dirLight.diffuse", glm::vec3(0.05f, 0.05f, 0.05f));
+        terrainShader.setVec3("dirLight.specular", glm::vec3(0.2f, 0.2f, 0.2f));
+
         terrainShader.setMat4("view", view);
         terrainShader.setMat4("projection", projection);
         terrainShader.setMat4("model", glm::mat4(1.0f));
@@ -450,11 +516,16 @@ int main() {
 
         //render transparent
         grassShader.use();
+
+        grassShader.setVec3("dirLight.direction", glm::vec3(-0.2f, 1.0f, -0.1f));
+        grassShader.setVec3("dirLight.ambient", glm::vec3(0.0f, 0.0f, 0.0f));
+        grassShader.setVec3("dirLight.diffuse", glm::vec3(0.05f, 0.05f, 0.05f));
+        grassShader.setVec3("dirLight.specular", glm::vec3(0.2f, 0.2f, 0.2f));
+        //grassShader.setMat4("model", glm::mat4(1.0f));
         grassShader.setMat4("view", view);
         grassShader.setMat4("projection", projection);
-        //grassShader.setMat4("model", glm::mat4(1.0f));
         glBindVertexArray(transparentVAO);
-
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, transparentTexture);
         glDrawArraysInstanced(GL_TRIANGLES, 0, 6, amount);
         glBindVertexArray(0);
