@@ -26,7 +26,7 @@ void processInput(GLFWwindow *window);
 
 void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods);
 
-
+void renderTerrain();
 
 unsigned int loadCubemap(vector<std::string> faces);
 unsigned int loadTexture(const char *path);
@@ -34,7 +34,7 @@ unsigned int loadTexture(const char *path);
 // settings
 const unsigned int SCR_WIDTH = 1600;
 const unsigned int SCR_HEIGHT = 900;
-
+float heightScale = 0.1;
 // camera
 
 float lastX = SCR_WIDTH / 2.0f;
@@ -62,6 +62,12 @@ struct DirLight {
     glm::vec3 specular;
 };
 
+struct SpotLight {
+    float constant;
+    float linear;
+    float quadratic;
+};
+
 
 struct ProgramState {
     glm::vec3 clearColor = glm::vec3(0);
@@ -70,12 +76,12 @@ struct ProgramState {
     bool CameraMouseMovementUpdateEnabled = true;
 //    glm::vec3 backpackPosition = glm::vec3(0.0f);
 
-    glm::vec3 housePosition = glm::vec3(15.0f, -1.0f, -20.0f);
+    glm::vec3 housePosition = glm::vec3(15.0f, -0.5f, -20.0f);
     float houseRotation = -90.0f;
     float houseScale = 80.0f;
 
-    glm::vec3 fencePosition = glm::vec3(-9.0f, -0.5f, -5.0f);
-    float fenceRotation = 90.0f;
+    glm::vec3 fencePosition = glm::vec3(-2.0f, -0.5f, -1.0f);
+    float fenceRotation = 180.0f;
     float fenceScale = 0.07f;
 
     glm::vec3 scarecrowPosition = glm::vec3(0.0f, -0.5f, -2.0f);
@@ -85,8 +91,9 @@ struct ProgramState {
     float backpackScale = 1.0f;
     PointLight pointLight;
     DirLight dirLight;
+    SpotLight spotLight;
     ProgramState()
-            : camera(glm::vec3(0.0f, 0.0f, 3.0f)) {}
+            : camera(glm::vec3(0.0f, 0.0f, 1.0f)) {}
 
     void SaveToFile(std::string filename);
 
@@ -255,7 +262,7 @@ int main() {
     };
 
     //positions terrain
-    //--------
+//    //--------
     float terrainVertices[] = {
             // coordinate       // texture
             60.0f, -0.5f,  60.0f,  20.0f, 0.0f,
@@ -288,7 +295,7 @@ int main() {
     //Dir light
     DirLight& dirLight = programState->dirLight;
     dirLight.direction = glm::vec3(0.2f, 120.0f, 25.0f);
-    dirLight.ambient =   glm::vec3(0.05f, 0.05f, 0.01f);
+    dirLight.ambient =   glm::vec3(.0f, 0.0f, 0.0f);
     dirLight.diffuse =   glm::vec3( 0.2f, 0.2f, 0.7f);
     dirLight.specular =  glm::vec3(0.7f, 0.7f, 0.7f);
 
@@ -303,17 +310,21 @@ int main() {
     pointLight.linear = 0.09f;
     pointLight.quadratic = 0.032f;
 
+//    //Spotlight
+    SpotLight& spotLight = programState->spotLight;
+    spotLight.constant = 1.0f;
+    spotLight.linear = 0.09f;
+    spotLight.quadratic = 0.032f;
 
-    //blending grass
     int amount = 100;
     glm::vec3 vegetations[amount];
     srand(glfwGetTime());
     glm::vec3 vegetation;
-//    float offset = 0.5f;
+//  float offset = 0.5f;
     vegetation.y = 0.0f;
     for(int i = 0; i < amount; i++){
-        vegetation.x = float(rand() % 16) - 8;
-        vegetation.z = float(rand() % 16) - 8;
+        vegetation.x = float(rand() % 15) - 7;
+        vegetation.z = float(rand() % 14) - 8;
         vegetations[i] = vegetation;
     }
     //
@@ -337,17 +348,17 @@ int main() {
 
 
     // VAO terrain
-    unsigned int terrainVAO, terrainVBO;
-    glGenVertexArrays(1, &terrainVAO);
-    glGenBuffers(1, &terrainVBO);
-    glBindVertexArray(terrainVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, terrainVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(terrainVertices), &terrainVertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(1);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glBindVertexArray(0);
+//    unsigned int terrainVAO, terrainVBO;
+//    glGenVertexArrays(1, &terrainVAO);
+//    glGenBuffers(1, &terrainVBO);
+//    glBindVertexArray(terrainVAO);
+//    glBindBuffer(GL_ARRAY_BUFFER, terrainVBO);
+//    glBufferData(GL_ARRAY_BUFFER, sizeof(terrainVertices), &terrainVertices, GL_STATIC_DRAW);
+//    glEnableVertexAttribArray(0);
+//    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+//    glEnableVertexAttribArray(1);
+//    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+//    glBindVertexArray(0);
 
     // VAO transparent
     unsigned int transparentVAO, transparentVBO;
@@ -367,7 +378,6 @@ int main() {
     glVertexAttribDivisor(2, 1);
 
 //    glBindVertexArray(0);
-
     vector<std::string> faces{
         FileSystem::getPath("resources/textures/skybox/left.jpeg"),
         FileSystem::getPath("resources/textures/skybox/right.jpeg"),
@@ -381,19 +391,14 @@ int main() {
     unsigned int cubemapTexture = loadCubemap(faces);
 
     //load texture
-    unsigned int floorTexture = loadTexture("resources/textures/terrain/terrain.jpeg");
-
+    unsigned int terrainDiffuse = loadTexture("resources/textures/terrain/terrain_diffuse.jpg");
+    unsigned int terrainNormal = loadTexture( "resources/textures/terrain/terrain_normal.jpg");
+    unsigned int terrainHeight = loadTexture( "resources/textures/terrain/terrain_height.jpg");
     stbi_set_flip_vertically_on_load(false);
     unsigned int transparentTexture = loadTexture("resources/textures/grassDry.png");
 
     // draw in wireframe
     //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-//    vector<glm::vec3> vegetation{
-//        glm::vec3(-1.5f, 0.0f, -0.48f),
-//        glm::vec3(1.5f, 0.0f, 0.51f),
-//        glm::vec3(0.0f, 0.0f, 0.7f),
-//    };
 
 
 
@@ -401,13 +406,10 @@ int main() {
     skyboxShader.use();
     skyboxShader.setInt("skybox", 0);
 
-    terrainShader.use();
-    terrainShader.setInt("terrain", 0);
 
     //shaderTransparent
     grassShader.use();
     grassShader.setInt("grass", 0);
-
 
     // render loop
     // -----------
@@ -432,14 +434,12 @@ int main() {
 
         LightShader.use();
 
-
         // Directional light
         LightShader.setVec3("dirLight.direction", dirLight.direction);
         LightShader.setVec3("dirLight.ambient", dirLight.ambient);
         LightShader.setVec3("dirLight.diffuse", dirLight.diffuse);
         LightShader.setVec3("dirLight.specular", dirLight.specular);
         // Point light
-
         LightShader.setVec3("pointLight.position", pointLight.position);
         LightShader.setVec3("pointLight.ambient", pointLight.ambient);
         LightShader.setVec3("pointLight.diffuse", pointLight.diffuse);
@@ -448,9 +448,22 @@ int main() {
         LightShader.setFloat("pointLight.linear", pointLight.linear);
         LightShader.setFloat("pointLight.quadratic", pointLight.quadratic);
 
+        LightShader.setVec3("spotLight.position", programState->camera.Position);
+        LightShader.setVec3("spotLight.direction", programState->camera.Front);
+
+        LightShader.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
+        LightShader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
+        LightShader.setVec3("spotLight.ambient", 3.0f, 3.0f, 3.0f);
+        LightShader.setVec3("spotLight.diffuse", 1.0f, 1.0f, 1.0f);
+        LightShader.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
+        LightShader.setFloat("spotLight.constant", spotLight.constant);
+        LightShader.setFloat("spotLight.linear", spotLight.linear);
+        LightShader.setFloat("spotLight.quadratic", spotLight.quadratic);
+
+
+       LightShader.setVec3("viewPos", programState->camera.Position);
+
         LightShader.setFloat("material.shininess", 32.0f);
-
-
         // view/projection transformations
         glm::mat4 projection = glm::perspective(glm::radians(programState->camera.Zoom),
                                                 (float) SCR_WIDTH / (float) SCR_HEIGHT, 0.1f, 100.0f);
@@ -459,7 +472,7 @@ int main() {
 
         LightShader.setMat4("projection", projection);
         LightShader.setMat4("view", view);
-
+//        LightShader.setMat4("model", model);
 
         // render the loaded model
         //house
@@ -492,27 +505,54 @@ int main() {
         LightShader.setMat4("model", model);
         scarecrowModel.Draw(LightShader);
 
+
+
         //render terrain
         terrainShader.use();
+        terrainShader.setInt("terrainDiffuse", 0);
+        terrainShader.setInt("terrainNormal", 1);
+        terrainShader.setInt("terrainHeight", 2);
 
-        terrainShader.setVec3("dirLight.direction", glm::vec3(-0.2f, 1.0f, -0.1f));
-        terrainShader.setVec3("dirLight.ambient", glm::vec3(0.0f, 0.0f, 0.0f));
-        terrainShader.setVec3("dirLight.diffuse", glm::vec3(0.05f, 0.05f, 0.05f));
-        terrainShader.setVec3("dirLight.specular", glm::vec3(0.2f, 0.2f, 0.2f));
+        terrainShader.setVec3("dirLight.direction", dirLight.direction);
+        terrainShader.setVec3("dirLight.ambient", dirLight.ambient);
+        terrainShader.setVec3("dirLight.diffuse", dirLight.diffuse);
+        terrainShader.setVec3("dirLight.specular", dirLight.specular);
+        terrainShader.setVec3("spotLight.position", programState->camera.Position);
+        terrainShader.setVec3("spotLight.direction", programState->camera.Front);
+        terrainShader.setVec3("spotLight.ambient", 4.0f, 4.0f, 4.0f);
+        terrainShader.setVec3("spotLight.diffuse", 2.0f, 2.0f, 2.0f);
+        terrainShader.setVec3("spotLight.specular", 1.0f, 1.0f, 1.0f);
+        terrainShader.setFloat("spotLight.constant", 1.0f);
+        terrainShader.setFloat("spotLight.linear", 0.09f);
+        terrainShader.setFloat("spotLight.quadratic", 0.032f);
+        terrainShader.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
+        terrainShader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
+        terrainShader.setVec3("viewPos", programState->camera.Position);
 
         terrainShader.setMat4("view", view);
         terrainShader.setMat4("projection", projection);
-        terrainShader.setMat4("model", glm::mat4(1.0f));
+
+
+
+
+        model = glm::mat4(1.0f);
+        model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(0,1,0));
+        terrainShader.setMat4("model", model);
+//        terrainShader.setFloat("heightScale", heightScale);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, floorTexture);
-        glBindVertexArray(terrainVAO);
-
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-
-        glBindVertexArray(0);
-
+        glBindTexture(GL_TEXTURE_2D, terrainDiffuse);
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, terrainNormal);
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, terrainHeight);
+        renderTerrain();
+//        terrainShader.setMat4("model", glm::mat4(1.0f));
+//        glBindVertexArray(terrainVAO);
+//
+//        glDrawArrays(GL_TRIANGLES, 0, 6);
+//
+//        glBindVertexArray(0);
         glDisable(GL_CULL_FACE);
-
 
         //render transparent
         grassShader.use();
@@ -521,6 +561,7 @@ int main() {
         grassShader.setVec3("dirLight.ambient", glm::vec3(0.0f, 0.0f, 0.0f));
         grassShader.setVec3("dirLight.diffuse", glm::vec3(0.05f, 0.05f, 0.05f));
         grassShader.setVec3("dirLight.specular", glm::vec3(0.2f, 0.2f, 0.2f));
+
         //grassShader.setMat4("model", glm::mat4(1.0f));
         grassShader.setMat4("view", view);
         grassShader.setMat4("projection", projection);
@@ -565,8 +606,8 @@ int main() {
     // ------------------------------------------------------------------
     glDeleteVertexArrays(1, &skyboxVAO);
     glDeleteBuffers(1, &skyboxVBO);
-    glDeleteVertexArrays(1, &terrainVAO);
-    glDeleteBuffers(1, &terrainVBO);
+//    glDeleteVertexArrays(1, &terrainVAO);
+//    glDeleteBuffers(1, &terrainVBO);
     glDeleteVertexArrays(1, &transparentVAO);
     glDeleteBuffers(1, &transparentVBO);
     glfwTerminate();
@@ -624,6 +665,113 @@ unsigned int loadTexture(char const *path)
 
     return textureID;
 }
+
+//Normal mapping for terrain
+unsigned int terrainVAO = 0;
+unsigned int terrainVBO;
+void renderTerrain(){
+
+    if (terrainVAO == 0)
+    {
+
+//        float terrainVertices[] = {
+//                // coordinate       // texture
+//                60.0f, -0.5f,  60.0f,  20.0f, 0.0f,
+//                -60.0f, -0.5f,  60.0f,  0.0f, 0.0f,
+//                -60.0f, -0.5f, -60.0f,  0.0f, 20.0f,
+//
+//                60.0f, -0.5f,  60.0f,  20.0f, 0.0f,
+//                -60.0f, -0.5f, -60.0f,  0.0f, 20.0f,
+//                60.0f, -0.5f, -60.0f,  20.0f, 20.0f
+//        };
+
+        // positions
+        glm::vec3 pos1(60.0f,  0.0f, 60.0f);
+        glm::vec3 pos2(60.0f, 0.0f, -60.0f);
+        glm::vec3 pos3( -60.0f, 0.0f, -60.0f);
+        glm::vec3 pos4( -60.0f,  0.0f, 60.0f);
+        // texture coordinates
+        glm::vec2 uv1(0.0f, 20.0f);
+        glm::vec2 uv2(0.0f, 0.0f);
+        glm::vec2 uv3(20.0f, 0.0f);
+        glm::vec2 uv4(20.0f, 20.0f);
+        // normal vector
+        glm::vec3 nm(0.0f, 0.0f, 1.0f);
+
+        // calculate tangent/bitangent vectors of both triangles
+        glm::vec3 tangent1, bitangent1;
+        glm::vec3 tangent2, bitangent2;
+        // triangle 1
+        // ----------
+        glm::vec3 edge1 = pos2 - pos1;
+        glm::vec3 edge2 = pos3 - pos1;
+        glm::vec2 deltaUV1 = uv2 - uv1;
+        glm::vec2 deltaUV2 = uv3 - uv1;
+
+        float f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+
+        tangent1.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+        tangent1.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+        tangent1.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+//        tangent1 = glm::normalize(tangent1);
+        bitangent1.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
+        bitangent1.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
+        bitangent1.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+//        bitangent1 = glm::normalize(bitangent1);
+        // triangle 2
+        // ----------
+        edge1 = pos3 - pos1;
+        edge2 = pos4 - pos1;
+        deltaUV1 = uv3 - uv1;
+        deltaUV2 = uv4 - uv1;
+
+        f = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+
+        tangent2.x = f * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+        tangent2.y = f * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+        tangent2.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+//        tangent2 = glm::normalize(tangent2);
+
+        bitangent2.x = f * (-deltaUV2.x * edge1.x + deltaUV1.x * edge2.x);
+        bitangent2.y = f * (-deltaUV2.x * edge1.y + deltaUV1.x * edge2.y);
+        bitangent2.z = f * (-deltaUV2.x * edge1.z + deltaUV1.x * edge2.z);
+//        bitangent2 = glm::normalize(bitangent2);
+
+        float terrainVertices[] = {
+                // positions            // normal         // texcoords  // tangent                          // bitangent
+                pos1.x, pos1.y, pos1.z, nm.x, nm.y, nm.z, uv1.x, uv1.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
+                pos2.x, pos2.y, pos2.z, nm.x, nm.y, nm.z, uv2.x, uv2.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
+                pos3.x, pos3.y, pos3.z, nm.x, nm.y, nm.z, uv3.x, uv3.y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z,
+
+                pos1.x, pos1.y, pos1.z, nm.x, nm.y, nm.z, uv1.x, uv1.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z,
+                pos3.x, pos3.y, pos3.z, nm.x, nm.y, nm.z, uv3.x, uv3.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z,
+                pos4.x, pos4.y, pos4.z, nm.x, nm.y, nm.z, uv4.x, uv4.y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z
+        };
+        // configure terrain VAO
+        glGenVertexArrays(1, &terrainVAO);
+        glGenBuffers(1, &terrainVBO);
+        glBindVertexArray(terrainVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, terrainVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(terrainVertices), &terrainVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(6 * sizeof(float)));
+        glEnableVertexAttribArray(3);
+        glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(8 * sizeof(float)));
+        glEnableVertexAttribArray(4);
+        glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(11 * sizeof(float)));
+    }
+    glBindVertexArray(terrainVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+}
+
+
+
+
 
 unsigned int loadCubemap(vector<std::string> faces){
     unsigned int textureID;

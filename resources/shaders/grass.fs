@@ -24,8 +24,8 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir){
 
     float diff = max(dot(normal, lightDir), 0.0);
 
-    vec3 reflectDir =  reflect(-lightDir, normal);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+    vec3 halfwayDir = normalize(lightDir + viewDir);
+    float spec = pow(max(dot(normal, halfwayDir), 0.0), 32.0);
 
     vec3 ambient = max(light.ambient, 0.2)  * vec3(texture(grass, TexCoords));
     vec3 diffuse = light.diffuse * diff * vec3(texture(grass, TexCoords));
