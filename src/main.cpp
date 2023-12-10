@@ -76,7 +76,7 @@ struct ProgramState {
     bool CameraMouseMovementUpdateEnabled = true;
 //    glm::vec3 backpackPosition = glm::vec3(0.0f);
 
-    glm::vec3 housePosition = glm::vec3(15.0f, -0.5f, -20.0f);
+    glm::vec3 housePosition = glm::vec3(14.0f, -0.5f, -21.0f);
     float houseRotation = -90.0f;
     float houseScale = 80.0f;
 
@@ -88,7 +88,43 @@ struct ProgramState {
     float scarecrowRotation = 180.0f;
     float scarecrowScale = 40.0f;
 
+    glm::vec3 lampPosition = glm::vec3(12.0f, -0.5f, -11.0f);
+    float lampRotation = 140.0f;
+    float lampScale = 100.0f;
+
+
+    //cactus positions
+    vector<glm::vec3> cactus1
+            {
+                    glm::vec3(-12.5f, 0.0f, -8.48f),
+                    glm::vec3(13.5f, 0.0f, -7.51f),
+                    glm::vec3(0.0f, 0.0f, -10.7f),
+                    glm::vec3(8.7f, 0.0f, -26.3f),
+                    glm::vec3(-10.5f, 0.0f, -0.6f)
+    };
+
+
+    float cactus1Rotation[5] = {10, 189, 69, 234, 48};
+    float cactus1Scale = 2.0f;
+
+    vector<glm::vec3> cactus2
+            {
+                    glm::vec3(2.5f, 0.0f, 6.48f),
+                    glm::vec3(15.5f, 0.0f, -3.51f),
+                    glm::vec3(8.0f, 0.0f, 2.7f),
+                    glm::vec3(12.3f, 0.0f, -24.3f),
+                    glm::vec3(24.5f, 0.0f, -13.6f)
+            };
+
+
+    float cactus2Rotation[5] = {13, 45, 69, 234, 45};
+    float cactus2Scale = 2.0f;
+
+    glm::vec3 roaPosition = glm::vec3(-6.5f, 0.0f, -12.0f);
+    float roadRotation = 0.0f;
+    float roadScale = 5.0f;
     float backpackScale = 1.0f;
+
     PointLight pointLight;
     DirLight dirLight;
     SpotLight spotLight;
@@ -206,13 +242,25 @@ int main() {
 
 
     //load models
-    Model houseModel("resources/objects/house/house.obj");
+    Model houseModel("resources/objects/house/source/house.obj");
     houseModel.SetShaderTextureNamePrefix("material.");
 
     Model fenceModel("resources/objects/fence/fence.obj");
     fenceModel.SetShaderTextureNamePrefix("material.");
 
     Model scarecrowModel("resources/objects/scarecrow/scarecrow.obj");
+    fenceModel.SetShaderTextureNamePrefix("material.");
+
+    Model lampModel("resources/objects/lamp/source/lamp.obj");
+    fenceModel.SetShaderTextureNamePrefix("material.");
+
+    Model cactusModel1("resources/objects/cactus/source/cactus1.obj");
+    fenceModel.SetShaderTextureNamePrefix("material.");
+
+    Model cactusModel2("resources/objects/cactus/source/cactus2.obj");
+    fenceModel.SetShaderTextureNamePrefix("material.");
+
+    Model roadModel("resources/objects/road/source/road.obj");
     fenceModel.SetShaderTextureNamePrefix("material.");
 
     //positions skybox
@@ -286,8 +334,8 @@ int main() {
 
     //Point light
     PointLight& pointLight = programState->pointLight;
-    pointLight.position = glm::vec3(4.0f, 4.0, 0.0);
-    pointLight.ambient = glm::vec3(0.1, 0.1, 0.1);
+    pointLight.position = glm::vec3(10.0f, 4.0, -12.0);
+    pointLight.ambient = glm::vec3(1.5, 1.5, 1.5);
     pointLight.diffuse = glm::vec3(0.6, 0.6, 0.6);
     pointLight.specular = glm::vec3(1.0, 1.0, 1.0);
 
@@ -426,7 +474,7 @@ int main() {
         LightShader.setFloat("pointLight.linear", pointLight.linear);
         LightShader.setFloat("pointLight.quadratic", pointLight.quadratic);
 
-        // Spot light
+        // Spotlight
         LightShader.setVec3("spotLight.position", programState->camera.Position);
         LightShader.setVec3("spotLight.direction", programState->camera.Front);
         LightShader.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
@@ -479,6 +527,45 @@ int main() {
         LightShader.setMat4("model", model);
         scarecrowModel.Draw(LightShader);
 
+        //lamp
+        model = glm::mat4(1.0f);
+        model = glm::translate(model,
+                               programState->lampPosition);
+        model = glm::rotate(model, glm::radians(programState->lampRotation), glm::vec3(0,1,0));
+        model = glm::scale(model, glm::vec3(programState->lampScale));
+        LightShader.setMat4("model", model);
+        lampModel.Draw(LightShader);
+
+
+        //cactus
+        for(int i = 0; i < programState->cactus1.size(); i++ ){
+            model = glm::mat4(1.0f);
+            model = glm::translate(model,
+                                   programState->cactus1[i]);
+            model = glm::rotate(model, glm::radians(programState->cactus1Rotation[i]), glm::vec3(0,1,0));
+            model = glm::scale(model, glm::vec3(programState->cactus1Scale));
+            LightShader.setMat4("model", model);
+            cactusModel1.Draw(LightShader);
+        }
+
+        for(int i = 0; i < programState->cactus2.size(); i++ ){
+            model = glm::mat4(1.0f);
+            model = glm::translate(model,
+                                   programState->cactus2[i]);
+            model = glm::rotate(model, glm::radians(programState->cactus2Rotation[i]), glm::vec3(0,1,0));
+            model = glm::scale(model, glm::vec3(programState->cactus2Scale));
+            LightShader.setMat4("model", model);
+            cactusModel2.Draw(LightShader);
+        }
+
+        //road
+        model = glm::mat4(1.0f);
+        model = glm::translate(model,
+                               programState->roaPosition);
+        model = glm::rotate(model, glm::radians(programState->roadRotation), glm::vec3(0,1,0));
+        model = glm::scale(model, glm::vec3(programState->roadScale));
+        LightShader.setMat4("model", model);
+        roadModel.Draw(LightShader);
 
         //render terrain
         terrainShader.use();
@@ -489,7 +576,16 @@ int main() {
         terrainShader.setVec3("dirLight.diffuse", dirLight.diffuse);
         terrainShader.setVec3("dirLight.specular", dirLight.specular);
 
-        // Spot light
+        // Point light
+        terrainShader.setVec3("pointLight.position", pointLight.position);
+        terrainShader.setVec3("pointLight.ambient", pointLight.ambient);
+        terrainShader.setVec3("pointLight.diffuse", pointLight.diffuse);
+        terrainShader.setVec3("pointLight.specular", pointLight.specular);
+        terrainShader.setFloat("pointLight.constant", pointLight.constant);
+        terrainShader.setFloat("pointLight.linear", pointLight.linear);
+        terrainShader.setFloat("pointLight.quadratic", pointLight.quadratic);
+
+        // Spotlight
         terrainShader.setVec3("spotLight.position", programState->camera.Position);
         terrainShader.setVec3("spotLight.direction", programState->camera.Front);
         terrainShader.setVec3("spotLight.ambient", 4.0f, 4.0f, 4.0f);
@@ -502,11 +598,12 @@ int main() {
         terrainShader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
         terrainShader.setVec3("viewPos", programState->camera.Position);
 
+
+
         terrainShader.setMat4("view", view);
         terrainShader.setMat4("projection", projection);
 
         model = glm::mat4(1.0f);
-//        model = glm::rotate(model, glm::radians(-90.0f), glm::vec3(0,1,0));
         terrainShader.setMat4("model", model);
         terrainShader.setFloat("heightScale", heightScale);
         glActiveTexture(GL_TEXTURE0);

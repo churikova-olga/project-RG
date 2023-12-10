@@ -1,0 +1,48 @@
+# Blender 4.0.1 MTL File: 'None'
+# www.blender.org
+
+newmtl Material_57.003
+Ns 1000.000000
+Ka 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 3
+map_Kd ../textures/road_diffuse.png
+map_d ../textures/road_diffuse.png
+
+newmtl Material_57.004
+Ns 1000.000000
+Ka 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 3
+map_Kd ../textures/road_diffuse.png
+map_d ../textures/road_diffuse.png
+
+newmtl Material_57.005
+Ns 1000.000000
+Ka 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 3
+map_Kd ../textures/road_diffuse.png
+map_d ../textures/road_diffuse.png
+
+newmtl Material_57.006
+Ns 1000.000000
+Ka 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 3
+map_Kd ../textures/road_diffuse.png
+map_d ../textures/road_diffuse.png
+
+newmtl Material_57.007
+Ns 1000.000000
+Ka 1.000000 1.000000 1.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+illum 3
+map_Kd ../textures/road_diffuse.png
+map_d ../textures/road_diffuse.png
