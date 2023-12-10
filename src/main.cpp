@@ -35,6 +35,8 @@ unsigned int loadTexture(const char *path);
 const unsigned int SCR_WIDTH = 1600;
 const unsigned int SCR_HEIGHT = 900;
 float heightScale = 0.1;
+bool isLamp = true;
+bool isLampPress = false;
 // camera
 
 float lastX = SCR_WIDTH / 2.0f;
@@ -425,6 +427,7 @@ int main() {
     LightShader.use();
     LightShader.setInt("material.diffuse", 0);
 
+
     skyboxShader.use();
     skyboxShader.setInt("skybox", 0);
 
@@ -437,6 +440,7 @@ int main() {
     terrainShader.setInt("terrainDiffuse", 0);
     terrainShader.setInt("terrainNormal", 1);
     terrainShader.setInt("terrainHeight", 2);
+
 
     // render loop
     // -----------
@@ -458,7 +462,7 @@ int main() {
 
 
         LightShader.use();
-
+        LightShader.setBool("isLamp", isLamp);
         // Directional light
         LightShader.setVec3("dirLight.direction", dirLight.direction);
         LightShader.setVec3("dirLight.ambient", dirLight.ambient);
@@ -606,6 +610,7 @@ int main() {
         model = glm::mat4(1.0f);
         terrainShader.setMat4("model", model);
         terrainShader.setFloat("heightScale", heightScale);
+        terrainShader.setBool("isLamp", isLamp);
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, terrainDiffuse);
         glActiveTexture(GL_TEXTURE1);
@@ -688,6 +693,15 @@ void processInput(GLFWwindow *window) {
         programState->camera.ProcessKeyboard(LEFT, deltaTime);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         programState->camera.ProcessKeyboard(RIGHT, deltaTime);
+
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS && !isLampPress){
+        isLamp = !isLamp;
+        isLampPress = true;
+    };
+
+    if (glfwGetKey(window, GLFW_KEY_F) == GLFW_RELEASE){
+        isLampPress = false;
+    };
 }
 
 unsigned int loadTexture(char const *path)
@@ -891,17 +905,17 @@ void DrawImGui(ProgramState *programState) {
 
 
     {
-        static float f = 0.0f;
-        ImGui::Begin("Hello window");
-        ImGui::Text("Hello text");
-        ImGui::SliderFloat("Float slider", &f, 0.0, 1.0);
+        ImGui::Begin("settings");
+//        ImGui::Text("Hello text");
+//        ImGui::SliderFloat("Float slider", &f, 0.0, 1.0);
 //        ImGui::ColorEdit3("Background color", (float *) &programState->clearColor);
 //        ImGui::DragFloat3("Backpack position", (float*)&programState->backpackPosition);
-        ImGui::DragFloat("Backpack scale", &programState->backpackScale, 0.05, 0.1, 4.0);
+        //ImGui::DragFloat("Backpack scale", &programState->backpackScale, 0.05, 0.1, 4.0);
 
-        ImGui::DragFloat("pointLight.constant", &programState->pointLight.constant, 0.05, 0.0, 1.0);
+        ImGui::SliderFloat("pointLight.constant", &programState->pointLight.constant, 0.0, 1.0);
         ImGui::DragFloat("pointLight.linear", &programState->pointLight.linear, 0.05, 0.0, 1.0);
         ImGui::DragFloat("pointLight.quadratic", &programState->pointLight.quadratic, 0.05, 0.0, 1.0);
+        ImGui::Checkbox("on/off flashlight", &isLamp);
         ImGui::End();
     }
 

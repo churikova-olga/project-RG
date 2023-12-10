@@ -50,6 +50,7 @@ uniform SpotLight spotLight;
 uniform PointLight pointLight;
 uniform vec3 viewPosition;
 uniform float heightScale;
+uniform bool isLamp;
 
 vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir)
 {
@@ -172,7 +173,10 @@ void main()
     //directional lighting
     vec3 result = CalcDirLight(dirLight, norm, viewDir, texCoords);
     //spot light
-    result += CalcSpotLight(spotLight, norm, FragPos, viewDir, texCoords);
+    if(isLamp){
+        result += CalcSpotLight(spotLight, norm, FragPos, viewDir, texCoords);
+    }
+
     //point light
     result += CalcPointLight(pointLight, norm, FragPos, viewDir, texCoords);
 
