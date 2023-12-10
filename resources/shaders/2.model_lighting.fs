@@ -51,6 +51,7 @@ uniform SpotLight spotLight;
 uniform Material material;
 
 uniform vec3 viewPosition;
+
 // calculates the color when using a point light.
 vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir){
     vec3 lightDir = normalize(light.position - fragPos);
@@ -71,6 +72,7 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir){
     specular *= attenuation;
     return (ambient + diffuse + specular);
 }
+
 vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir){
     vec3 lightDir = normalize(-light.direction);
 
@@ -87,6 +89,7 @@ vec3 CalcDirLight(DirLight light, vec3 normal, vec3 viewDir){
     return (result);
 
 }
+
 vec3 CalcSpotLight(SpotLight light, vec3 normal, vec3 fragPos, vec3 viewDir){
     vec3 lightDir = normalize(light.position - fragPos);
     // diffuse shading

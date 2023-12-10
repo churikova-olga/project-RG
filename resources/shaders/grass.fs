@@ -44,7 +44,7 @@ void main()
     vec4 texColor = texture(grass, TexCoords);
     if(texColor.a < 0.1)
         discard;
-    //FragColor = texColor;
+
     vec3 result = CalcDirLight(dirLight, normal, viewDir);
     FragColor = vec4(result, 1.0);
 }
