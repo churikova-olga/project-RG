@@ -78,7 +78,7 @@ struct ProgramState {
     bool CameraMouseMovementUpdateEnabled = true;
 //    glm::vec3 backpackPosition = glm::vec3(0.0f);
 
-    glm::vec3 housePosition = glm::vec3(14.0f, -0.5f, -21.0f);
+    glm::vec3 housePosition = glm::vec3(14.0f, -0.1f, -21.0f);
     float houseRotation = -90.0f;
     float houseScale = 80.0f;
 
@@ -122,14 +122,20 @@ struct ProgramState {
     float cactus2Rotation[5] = {13, 45, 69, 234, 45};
     float cactus2Scale = 2.0f;
 
-    glm::vec3 roaPosition = glm::vec3(-6.5f, 0.0f, -12.0f);
+    glm::vec3 roadPosition = glm::vec3(-6.5f, 0.0f, -12.0f);
     float roadRotation = 0.0f;
     float roadScale = 5.0f;
-    float backpackScale = 1.0f;
+
+
+    glm::vec3 dogPosition = glm::vec3(8.0f, 0.0f, -19.0f);
+
+    float dogRotation = 250.0f;
+    float dogScale = 3.0f;
 
     PointLight pointLight;
     DirLight dirLight;
     SpotLight spotLight;
+
     ProgramState()
             : camera(glm::vec3(0.0f, 0.0f, 1.0f)) {}
 
@@ -263,6 +269,9 @@ int main() {
     fenceModel.SetShaderTextureNamePrefix("material.");
 
     Model roadModel("resources/objects/road/source/road.obj");
+    fenceModel.SetShaderTextureNamePrefix("material.");
+
+    Model dogModel("resources/objects/dog/dog.obj");
     fenceModel.SetShaderTextureNamePrefix("material.");
 
     //positions skybox
@@ -565,11 +574,20 @@ int main() {
         //road
         model = glm::mat4(1.0f);
         model = glm::translate(model,
-                               programState->roaPosition);
+                               programState->roadPosition);
         model = glm::rotate(model, glm::radians(programState->roadRotation), glm::vec3(0,1,0));
         model = glm::scale(model, glm::vec3(programState->roadScale));
         LightShader.setMat4("model", model);
         roadModel.Draw(LightShader);
+        //dog
+        model = glm::mat4(1.0f);
+        model = glm::translate(model,
+                               programState->dogPosition);
+        model = glm::rotate(model, glm::radians(programState->dogRotation), glm::vec3(0,1,0));
+        model = glm::scale(model, glm::vec3(programState->dogScale));
+        LightShader.setMat4("model", model);
+        dogModel.Draw(LightShader);
+
 
         //render terrain
         terrainShader.use();
@@ -912,9 +930,16 @@ void DrawImGui(ProgramState *programState) {
 //        ImGui::DragFloat3("Backpack position", (float*)&programState->backpackPosition);
         //ImGui::DragFloat("Backpack scale", &programState->backpackScale, 0.05, 0.1, 4.0);
 
+        ImGui::Text("Change pointLight");
         ImGui::SliderFloat("pointLight.constant", &programState->pointLight.constant, 0.0, 1.0);
         ImGui::DragFloat("pointLight.linear", &programState->pointLight.linear, 0.05, 0.0, 1.0);
         ImGui::DragFloat("pointLight.quadratic", &programState->pointLight.quadratic, 0.05, 0.0, 1.0);
+
+        ImGui::Text("Change positions of dog");
+        ImGui::DragFloat("dog position.x", &programState->dogPosition.x, 0.05, -30.0, 30.0);
+        ImGui::DragFloat("dog position.z", &programState->dogPosition.z, 0.05, -30.0, 30.0);
+        ImGui::SliderFloat("dog rotate", &programState->dogRotation, 0.0, 360.0);
+
         ImGui::Checkbox("on/off flashlight", &isLamp);
         ImGui::End();
     }
