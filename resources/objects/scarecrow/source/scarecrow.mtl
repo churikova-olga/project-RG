@@ -1,0 +1,82 @@
+# Blender 4.0.1 MTL File: 'scarecrow.blend'
+# www.blender.org
+
+newmtl lambert1
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.500000 0.500000 0.500000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+
+newmtl scarecrow_rig_kims_r0:VRayMtl1
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.500000 0.500000 0.500000
+Ks 0.169725 0.169725 0.169725
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+
+newmtl scarecrow_rig_kims_r0:VRayMtl3
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd ../textures/scarecrow1.jpg
+
+newmtl scarecrow_rig_kims_r0:VRayMtl4
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.169725 0.169725 0.169725
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd ../textures/scarecrow5.jpg
+
+newmtl scarecrow_rig_kims_r0:VRayMtl40
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd ../textures/scarecrow4.jpg
+
+newmtl scarecrow_rig_kims_r0:VRayMtl41
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd ../textures/scarecrow6.jpg
+
+newmtl scarecrow_rig_kims_r0:VRayMtl42
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.000000 0.000000 0.000000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 1
+map_Kd ../textures/scarecrow3.jpg
+
+newmtl scarecrow_rig_kims_r0:VRayMtl43
+Ns 200.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.000000 0.000000 0.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2

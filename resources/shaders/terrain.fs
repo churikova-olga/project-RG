@@ -66,7 +66,6 @@ vec2 ParallaxMapping(vec2 texCoords, vec3 viewDir)
     vec2 P = viewDir.xy  * heightScale;
     //vec2 P = viewDir.xy / viewDir.z * heightScale;
     vec2 deltaTexCoords = P / numLayers;
-
     // get initial values
     vec2  currentTexCoords = texCoords;
     float currentDepthMapValue = texture(terrainHeight, currentTexCoords).r;
@@ -162,7 +161,6 @@ vec3 CalcPointLight(PointLight light, vec3 normal, vec3 fragPos, vec3 viewDir, v
 
 void main()
 {
-
     vec3 viewDir = normalize(TangentViewPos - TangentFragPos);
     //parallax mapping
     vec2 texCoords = ParallaxMapping(TexCoords,  viewDir);
@@ -176,10 +174,8 @@ void main()
     if(isLamp){
         result += CalcSpotLight(spotLight, norm, FragPos, viewDir, texCoords);
     }
-
     //point light
     result += CalcPointLight(pointLight, norm, FragPos, viewDir, texCoords);
-
     FragColor = vec4(result, 1.0);
 
 }

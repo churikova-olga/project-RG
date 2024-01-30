@@ -118,7 +118,6 @@ struct ProgramState {
                     glm::vec3(24.5f, 0.0f, -13.6f)
             };
 
-
     float cactus2Rotation[5] = {13, 45, 69, 234, 45};
     float cactus2Scale = 2.0f;
 
@@ -128,7 +127,6 @@ struct ProgramState {
 
 
     glm::vec3 dogPosition = glm::vec3(8.0f, 0.0f, -19.0f);
-
     float dogRotation = 250.0f;
     float dogScale = 3.0f;
 
@@ -253,10 +251,10 @@ int main() {
     Model houseModel("resources/objects/house/source/house.obj");
     houseModel.SetShaderTextureNamePrefix("material.");
 
-    Model fenceModel("resources/objects/fence/fence.obj");
+    Model fenceModel("resources/objects/fence/source/fence.obj");
     fenceModel.SetShaderTextureNamePrefix("material.");
 
-    Model scarecrowModel("resources/objects/scarecrow/scarecrow.obj");
+    Model scarecrowModel("resources/objects/scarecrow/source/scarecrow.obj");
     fenceModel.SetShaderTextureNamePrefix("material.");
 
     Model lampModel("resources/objects/lamp/source/lamp.obj");
@@ -271,7 +269,7 @@ int main() {
     Model roadModel("resources/objects/road/source/road.obj");
     fenceModel.SetShaderTextureNamePrefix("material.");
 
-    Model dogModel("resources/objects/dog/dog.obj");
+    Model dogModel("resources/objects/dog/source/dog.obj");
     fenceModel.SetShaderTextureNamePrefix("material.");
 
     //positions skybox
@@ -436,10 +434,8 @@ int main() {
     LightShader.use();
     LightShader.setInt("material.diffuse", 0);
 
-
     skyboxShader.use();
     skyboxShader.setInt("skybox", 0);
-
 
     //shaderTransparent
     grassShader.use();
@@ -449,7 +445,6 @@ int main() {
     terrainShader.setInt("terrainDiffuse", 0);
     terrainShader.setInt("terrainNormal", 1);
     terrainShader.setInt("terrainHeight", 2);
-
 
     // render loop
     // -----------
@@ -579,6 +574,7 @@ int main() {
         model = glm::scale(model, glm::vec3(programState->roadScale));
         LightShader.setMat4("model", model);
         roadModel.Draw(LightShader);
+
         //dog
         model = glm::mat4(1.0f);
         model = glm::translate(model,
@@ -619,7 +615,6 @@ int main() {
         terrainShader.setFloat("spotLight.cutOff", glm::cos(glm::radians(12.5f)));
         terrainShader.setFloat("spotLight.outerCutOff", glm::cos(glm::radians(15.0f)));
         terrainShader.setVec3("viewPos", programState->camera.Position);
-
 
 
         terrainShader.setMat4("view", view);
@@ -783,6 +778,7 @@ void renderTerrain(){
         // calculate tangent/bitangent vectors of both triangles
         glm::vec3 tangent1, bitangent1;
         glm::vec3 tangent2, bitangent2;
+
         // triangle 1
         // ----------
         glm::vec3 edge1 = pos2 - pos1;
@@ -924,11 +920,6 @@ void DrawImGui(ProgramState *programState) {
 
     {
         ImGui::Begin("settings");
-//        ImGui::Text("Hello text");
-//        ImGui::SliderFloat("Float slider", &f, 0.0, 1.0);
-//        ImGui::ColorEdit3("Background color", (float *) &programState->clearColor);
-//        ImGui::DragFloat3("Backpack position", (float*)&programState->backpackPosition);
-        //ImGui::DragFloat("Backpack scale", &programState->backpackScale, 0.05, 0.1, 4.0);
 
         ImGui::Text("Change pointLight");
         ImGui::SliderFloat("pointLight.constant", &programState->pointLight.constant, 0.0, 1.0);
